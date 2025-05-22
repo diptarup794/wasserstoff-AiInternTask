@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .hover-scale {
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .hover-scale:hover {
+            transform: scale(1.03);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .chat-message {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .chat-message.user {
+            background: #f3f4f6;
+            border-left: 4px solid #6366f1;
+        }
+        .chat-message.assistant {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+        }
+        .file-list {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: white;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+            margin-top: 1.5rem;
+        }
+        .file-list-header {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-weight: 600;
+            color: #374151;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .file-list-count {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: normal;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+        .file-item:last-child {
+            border-bottom: none;
+        }
+        .file-item:hover {
+            background-color: #f9fafb;
+            transform: translateX(5px);
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            min-width: 0;
+        }
+        .file-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            border-radius: 0.5rem;
+            color: #4b5563;
+            transition: all 0.3s ease;
+        }
+        .file-item:hover .file-icon {
+            background: #e0e7ff;
+            color: #4f46e5;
+            transform: scale(1.1);
+        }
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-name {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .file-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        .file-size {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        .delete-btn {
+            padding: 0.5rem;
+            background: #fee2e2;
+            color: #ef4444;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .delete-btn:hover {
+            background: #fecaca;
+            transform: scale(1.05);
+        }
+        .empty-state {
+            padding: 2rem;
+            text-align: center;
+            color: #6b7280;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        .upload-btn {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+        }
+        .upload-btn:hover {
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
+            transform: translateY(-2px) scale(1.04);
+        }
+        .drop-highlight {
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0% { border-color: #d1d5db; }
+            50% { border-color: #6366f1; }
+            100% { border-color: #d1d5db; }
+        }
+        .btn-send {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+        }
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+        .input-focus:focus {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="text-center mb-8 animate__animated animate__fadeIn">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2 gradient-text">Research Assistant</h1>
+            <p class="text-gray-600">Upload documents and chat with AI about their contents</p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Upload Section -->
+            <div class="bg-white rounded-lg shadow-lg p-6 animate__animated animate__fadeInLeft">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-4">Upload Documents</h2>
+                <form id="uploadForm" class="space-y-4">
+                    <div id="dropZone" 
+                         class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors hover-scale">
+                        <div class="space-y-4">
+                            <div class="flex justify-center">
+                                <i class="fas fa-cloud-upload-alt text-5xl text-indigo-500 animate__animated animate__bounceIn"></i>
+                            </div>
+                            <div class="text-gray-600">
+                                <p class="text-lg font-medium">Drag and drop your files here</p>
+                                <p class="text-sm mt-1">or click to browse</p>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                                Supported formats: PDF, DOCX, TXT, PNG, JPG (Max size: 16MB)
+                            </p>
+                        </div>
+                        <input type="file" id="fileInput" multiple class="hidden" 
+                               accept=".pdf,.docx,.txt,.png,.jpg,.jpeg">
+                    </div>
+                    <button type="submit" 
+                            class="w-full upload-btn text-white px-6 py-3 rounded-lg transition-colors flex items-center justify-center space-x-2 hover-scale animate__animated animate__pulse animate__infinite">
+                        <i class="fas fa-upload"></i>
+                        <span>Upload and Process</span>
+                    </button>
+                    <div id="uploadProgress" class="hidden">
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="progressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" 
+                                 style="width: 0%"></div>
+                        </div>
+                        <p id="progressText" class="text-sm text-gray-600 mt-2 text-center">Processing...</p>
+                    </div>
+                </form>
+                <div class="file-list animate__animated animate__fadeInUp">
+                    <div class="file-list-header">
+                        <span>Processed Files</span>
+                        <span class="file-list-count" id="fileCount">0 files</span>
+                    </div>
+                    <div id="fileList" class="divide-y divide-gray-200 overflow-y-auto custom-scrollbar" style="max-height: 320px;">
+                        <!-- Files will be listed here -->
+                    </div>
+                </div>
+            </div>
+            <!-- Chat Section -->
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col h-[600px] chat-section animate__animated animate__fadeInRight">
+                <div class="border-b px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+                    <h2 class="text-2xl font-semibold">Chat</h2>
+                    <p class="text-sm text-indigo-100">Ask questions about your documents</p>
+                </div>
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                    <!-- Welcome message -->
+                    <div class="chat-message assistant">
+                        <div class="chat-message-content">
+                            <p>Hello! I'm your research assistant. Upload some documents and ask me questions about them.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-t p-4 bg-gray-50">
+                    <form id="chatForm" class="flex space-x-4">
+                        <div class="flex-1 relative">
+                            <input type="text" id="userInput" 
+                                   placeholder="Type your question..." 
+                                   class="w-full rounded-lg border-gray-300 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 pr-12 py-3 input-focus">
+                            <button type="button" id="clearInput" 
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 hidden">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <button type="submit" 
+                                class="btn-send text-white px-6 py-2 rounded-lg flex items-center hover-scale">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Send
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Add your JavaScript logic for file upload, file list, and chat here.
+        // You can use the previous JS logic you had, or request for a full JS implementation if needed.
+        // Add your JavaScript logic for file upload, file list, and chat here.
+// You can use the previous JS logic you had, or request for a full JS implementation if needed.
+
+document.addEventListener('DOMContentLoaded', function() {
+    // DOM Elements
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const fileList = document.getElementById('fileList');
+    const fileCount = document.getElementById('fileCount');
+    const chatForm = document.getElementById('chatForm');
+    const userInput = document.getElementById('userInput');
+    const chatMessages = document.getElementById('chatMessages');
+    const clearInput = document.getElementById('clearInput');
+
+    // Initialize
+    loadFiles();
+
+    // File Upload - Drag & Drop
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        dropZone.classList.add('drop-highlight', 'border-indigo-500');
+        dropZone.classList.add('animate__animated', 'animate__pulse');
+    }
+
+    function unhighlight() {
+        dropZone.classList.remove('drop-highlight', 'border-indigo-500');
+        dropZone.classList.remove('animate__animated', 'animate__pulse');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        fileInput.files = files;
+    }
+
+    // Click to browse files
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // File Upload Form
+    uploadForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const files = fileInput.files;
+        if (!files.length) {
+            showNotification('Please select files to upload', 'error');
+            return;
+        }
+
+        // Show progress
+        uploadProgress.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressText.textContent = 'Processing...';
+
+        const formData = new FormData();
+        for (const file of files) {
+            formData.append('files', file);
+        }
+
+        try {
+            // Simulate progress (in a real app, you'd use XHR or fetch with progress events)
+            const interval = setInterval(() => {
+                const currentWidth = parseInt(progressBar.style.width) || 0;
+                if (currentWidth < 90) {
+                    progressBar.style.width = (currentWidth + 10) + '%';
+                }
+            }, 300);
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            clearInterval(interval);
+            progressBar.style.width = '100%';
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                progressText.textContent = 'Upload complete!';
+                showNotification('Files uploaded successfully!', 'success');
+                loadFiles();
+                uploadForm.reset();
+            } else {
+                progressText.textContent = 'Upload failed';
+                showNotification(result.error || 'Upload failed', 'error');
+            }
+
+            // Hide progress after delay
+            setTimeout(() => {
+                uploadProgress.classList.add('hidden');
+            }, 2000);
+
+        } catch (error) {
+            progressBar.style.width = '100%';
+            progressText.textContent = 'Upload failed';
+            showNotification('Error uploading files', 'error');
+            
+            setTimeout(() => {
+                uploadProgress.classList.add('hidden');
+            }, 2000);
+        }
+    });
+
+    // Load Files
+    async function loadFiles() {
+        try {
+            const response = await fetch('/api/files');
+            const data = await response.json();
+            
+            if (response.ok) {
+                renderFileList(data.files || []);
+            } else {
+                showNotification('Failed to load files', 'error');
+            }
+        } catch (error) {
+            showNotification('Error loading files', 'error');
+        }
+    }
+
+    // Render File List
+    function renderFileList(files) {
+        fileList.innerHTML = '';
+        fileCount.textContent = `${files.length} file${files.length !== 1 ? 's' : ''}`;
+        
+        if (files.length === 0) {
+            fileList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-file-alt mb-2"></i>
+                    <p>No files uploaded yet</p>
+                </div>
+            `;
+            return;
+        }
+        
+        files.forEach(file => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item animate__animated animate__fadeIn';
+            
+            // Get file icon based on type
+            let iconClass = 'fa-file-alt';
+            if (file.type === 'pdf') iconClass = 'fa-file-pdf';
+            else if (file.type === 'docx') iconClass = 'fa-file-word';
+            else if (file.type === 'txt') iconClass = 'fa-file-lines';
+            else if (['jpg', 'jpeg', 'png'].includes(file.type)) iconClass = 'fa-file-image';
+            
+            // Format file size
+            const fileSize = formatFileSize(file.size);
+            
+            // Format date
+            const fileDate = new Date(file.uploaded_at * 1000).toLocaleDateString();
+            
+            fileItem.innerHTML = `
+                <div class="file-info">
+                    <div class="file-icon">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <div class="file-details">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">
+                            <div class="file-size">
+                                <i class="fas fa-weight-hanging text-gray-400"></i>
+                                ${fileSize}
+                            </div>
+                            <div class="file-date">
+                                <i class="fas fa-calendar-alt text-gray-400"></i>
+                                ${fileDate}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button class="delete-btn" data-filename="${file.name}">
+                    <i class="fas fa-trash-alt"></i>
+                    <span class="hidden sm:inline">Delete</span>
+                </button>
+            `;
+            
+            fileList.appendChild(fileItem);
+            
+            // Add animation delay for staggered appearance
+            setTimeout(() => {
+                fileItem.classList.add('animate__fadeIn');
+            }, 100 * files.indexOf(file));
+        });
+        
+        // Add event listeners to delete buttons
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', handleDeleteFile);
+        });
+    }
+
+    // Delete File
+    async function handleDeleteFile() {
+        const filename = this.dataset.filename;
+        
+        if (!confirm(`Are you sure you want to delete "${filename}"?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/files/${encodeURIComponent(filename)}`, {
+                method: 'DELETE'
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                showNotification('File deleted successfully', 'success');
+                
+                // Add animation to the deleted item
+                const fileItem = this.closest('.file-item');
+                fileItem.classList.add('animate__animated', 'animate__fadeOutRight');
+                
+                // Wait for animation to complete before refreshing the list
+                setTimeout(() => {
+                    loadFiles();
+                }, 500);
+            } else {
+                showNotification(result.error || 'Failed to delete file', 'error');
+            }
+        } catch (error) {
+            showNotification('Error deleting file', 'error');
+        }
+    }
+
+    // Chat Form
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const query = userInput.value.trim();
+        if (!query) return;
+        
+        // Add user message to chat
+        addChatMessage('user', query);
+        
+        // Clear input
+        userInput.value = '';
+        clearInput.classList.add('hidden');
+        
+        // Add typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.className = 'chat-message assistant animate__animated animate__fadeIn';
+        typingIndicator.innerHTML = `
+            <div class="flex items-center space-x-2 typing-indicator">
+                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+            </div>
+        `;
+        chatMessages.appendChild(typingIndicator);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query })
+            });
+            
+            const result = await response.json();
+            
+            // Remove typing indicator
+            chatMessages.removeChild(typingIndicator);
+            
+            if (response.ok) {
+                // Add bot response
+                addChatMessage('assistant', result.response || 'I couldn\'t find an answer to your question.');
+            } else {
+                addChatMessage('assistant', 'Sorry, I encountered an error processing your request.');
+            }
+        } catch (error) {
+            // Remove typing indicator
+            chatMessages.removeChild(typingIndicator);
+            addChatMessage('assistant', 'Sorry, there was an error connecting to the server.');
+        }
+    });
+
+    // Add chat message
+    function addChatMessage(sender, content) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message ${sender} animate__animated animate__fadeIn`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'chat-message-content';
+        
+        if (sender === 'user') {
+            contentDiv.innerHTML = `<strong>You:</strong> ${content}`;
+        } else {
+            // Use marked.js to render markdown
+            contentDiv.innerHTML = `<strong>Assistant:</strong> ${marked.parse(content)}`;
+        }
+        
+        messageDiv.appendChild(contentDiv);
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Input clear button
+    userInput.addEventListener('input', function() {
+        if (this.value) {
+            clearInput.classList.remove('hidden');
+        } else {
+            clearInput.classList.add('hidden');
+        }
+    });
+
+    clearInput.addEventListener('click', function() {
+        userInput.value = '';
+        this.classList.add('hidden');
+        userInput.focus();
+    });
+
+    // Utility Functions
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        else return (bytes / 1048576).toFixed(1) + ' MB';
+    }
+
+    // Notification System
+    function showNotification(message, type = 'info') {
+        // Remove any existing notifications
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => {
+            notification.remove();
+        });
+        
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'notification fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg animate__animated animate__fadeInRight z-50';
+        
+        // Set color based on type
+        if (type === 'success') {
+            notification.classList.add('bg-green-500', 'text-white');
+            notification.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${message}`;
+        } else if (type === 'error') {
+            notification.classList.add('bg-red-500', 'text-white');
+            notification.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i> ${message}`;
+        } else {
+            notification.classList.add('bg-blue-500', 'text-white');
+            notification.innerHTML = `<i class="fas fa-info-circle mr-2"></i> ${message}`;
+        }
+        
+        // Add to DOM
+        document.body.appendChild(notification);
+        
+        // Remove after 4 seconds
+        setTimeout(() => {
+            notification.classList.add('animate__fadeOutRight');
+            setTimeout(() => {
+                notification.remove();
+            }, 500);
+        }, 4000);
+    }
+});
+    </script>
+</body>
+</html>
